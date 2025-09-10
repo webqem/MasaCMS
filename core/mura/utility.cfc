@@ -1157,27 +1157,35 @@ Blog: www.codfusion.com--->
 	<cfargument name="href">
 	<cfargument name="siteid" default="">
 	<cfset var returnProtocol = "">
-	
-	<cfif not len(arguments.siteid)>
-		<cfset sessionData=getSession()>
-		<cfset arguments.siteid=sessionData.siteid>
-	</cfif>
-	
-	<cfset var currentSite  = getBean('settingsManager').getSite(arguments.siteid)>
 
-	<cfif len(arguments.href) and (
-		listFindNoCase("http,https",listFirst(arguments.href,":"))
-		or len(arguments.href) gt 1 and left(arguments.href,2) eq "//"
-	)>	
-		<cfset  returnProtocol = listFirst(arguments.href,':') />	
-	<cfelse>		
-		<cfset returnProtocol = lcase(currentSite.getProtocol()) />				
+	<!--- Add validation for double-encoded characters --->
+	<cfif find("%25", arguments.href)>
+		<cfreturn "/">
 	</cfif>
-			
-	<cfset returnDomain = parseDomain(arguments.href) />
-	<cfif not listfindNoCase(getBean('settingsManager').getAccessControlOriginDomainList(),returnDomain) and len(returnDomain)>	
-		<cfset arguments.href=replace(arguments.href,returnDomain,getBean('settingsManager').getSite(arguments.siteid).getDomain())>
-	</cfif>	
+
+	<!--- Add validation for IPv6 address patterns in path --->
+	<cfloop list="#arguments.href#" index="part" delimiters="/">
+		<cfif find(":", part) and ReFindNoCase("(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))", part)>
+			<cfreturn "/">
+		</cfif>
+	</cfloop>
+	
+	
+	<cfif len(arguments.href) and (
+			listFindNoCase("http,https",listFirst(arguments.href,":"))
+			or len(arguments.href) gt 1 and left(arguments.href,2) eq "//"
+		)>
+		<cfif not len(arguments.siteid)>
+			<cfset sessionData=getSession()>
+			<cfset arguments.siteid=sessionData.siteid>
+		</cfif>
+		
+		<cfset var returnProtocol = listFirst(arguments.href,':') />
+		<cfset var returnDomain = parseDomain(arguments.href) />
+		<cfif not listfindNoCase(getBean('settingsManager').getAccessControlOriginDomainList(),returnDomain) and len(returnDomain)>	
+			<cfset arguments.href=replace(arguments.href,returnDomain,getBean('settingsManager').getSite(arguments.siteid).getDomain())>
+		</cfif>
+	</cfif>
 
 	<cfreturn arguments.href>
 </cffunction>
