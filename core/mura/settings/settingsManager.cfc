@@ -849,7 +849,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					var admindomain=variables.configBean.getAdminDomain();
 
 					if(len(admindomain)){
-						variables.AccessControlOriginList=listAppend(variables.AccessControlOriginDomainList,admindomain);
+						variables.AccessControlOriginDomainList=listAppend(variables.AccessControlOriginDomainList,admindomain);
 					}
 
 					var sites=getSites();
